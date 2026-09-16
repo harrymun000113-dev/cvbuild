@@ -1,0 +1,4 @@
+streamlit==1.64.0
+openai==3.14.1
+httpx2==2.13.0
+pydantic==2.13.5
