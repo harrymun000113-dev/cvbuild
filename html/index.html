@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 자기소개서 빌더</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            color: #191f28;
+            background-color: #f7f9fb; /* 기본은 빌더 배경색으로 */
+            overflow-x: hidden;
+        }
+
+        .text-blue { color: #1b64da; }
+        .hidden { display: none !important; }
+        .mt-4 { margin-top: 16px; }
+
+        /* =========================================
+           랜딩 페이지 (Section) 스타일
+        ========================================= */
+        #landing-section {
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .landing-bg-section {
+            position: relative;
+            width: 100%;
+            height: 480px;
+            background-color: #e5f1ff;
+            background-image: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 4px,
+                rgba(255, 255, 255, 0.4) 4px,
+                rgba(255, 255, 255, 0.4) 8px
+            );
+            display: flex;
+            justify-content: center;
+            padding-top: 40px;
+            overflow: hidden;
+        }
+
+        .fade-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .company-tags-container {
+            width: 100%;
+            max-width: 800px;
+            position: relative;
+            z-index: 1;
+        }
+        .tag-row { display: flex; justify-content: center; gap: 12px; margin-bottom: 16px; }
+        .row-faded { opacity: 0.4; }
+        .tag-pill {
+            background: #ffffff; border-radius: 30px; padding: 10px 18px;
+            font-size: 14px; font-weight: 600; color: #333d4b;
+            display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03); white-space: nowrap;
+        }
+        .tag-pill .arrow { color: #b0b8c1; font-weight: 300; margin-left: 2px; }
+
+        .logo-circle { width: 16px; height: 16px; border-radius: 50%; display: inline-block; }
+        .bg-mirae { background: #004289; } .bg-ibk { background: #005eb8; } .bg-gas { background: #008cc9; }
+        .bg-hanhwa { background: #f26622; } .bg-samsung { background: #1428a0; } .bg-hyundai { background: #002c5f; }
+        .bg-sk { background: #e00000; } .bg-kakao { background: #fae100; } .bg-lg { background: #a50034; }
+        .bg-naver { background: #03c75a; } .bg-posco { background: #005a96; } .bg-kia { background: #05141f; }
+        .bg-kepco { background: #ef3340; } .bg-shinhan { background: #0046ff; }
+
+        .landing-content {
+            position: relative;
+            z-index: 10;
+            margin-top: -60px;
+            display: flex; flex-direction: column; align-items: center;
+            text-align: center; width: 100%; max-width: 500px; padding: 0 20px 60px 20px;
+        }
+        .icon-box {
+            background: #c7e0f4; color: #274b72;
+            width: 56px; height: 56px; border-radius: 18px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 24px; box-shadow: 0 8px 16px rgba(0,0,0,0.04);
+        }
+        .landing-title { font-size: 32px; font-weight: 800; line-height: 1.35; margin-bottom: 16px; }
+        .landing-desc { font-size: 16px; color: #4e5968; line-height: 1.6; margin-bottom: 40px; }
+
+        .action-area { width: 100%; margin-bottom: 28px; }
+        .btn-start {
+            display: flex; align-items: center; justify-content: center; width: 100%;
+            background: #1b64da; color: #ffffff;
+            font-size: 16px; font-weight: 700; padding: 18px 0;
+            border-radius: 12px; text-decoration: none; border: none; cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 12px rgba(27, 100, 218, 0.2);
+        }
+        .btn-start:hover { background: #134eb3; transform: translateY(-2px); }
+
+        .terms-text { font-size: 11px; color: #b0b8c1; }
+        .terms-text a { color: #8b95a1; text-decoration: underline; cursor: pointer; }
+
+
+        /* =========================================
+           빌더(마법사) 섹션 스타일
+        ========================================= */
+        #builder-section {
+            display: none; /* 초기에는 숨김 */
+            padding-top: 40px;
+            padding-bottom: 40px;
+            min-height: 100vh;
+        }
+
+        .wizard-container {
+            max-width: 660px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 36px 32px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+        }
+
+        .stepper-nav { display: flex; gap: 8px; margin-bottom: 36px; }
+        .step-indicator { flex: 1; height: 4px; background-color: #e5e8eb; border-radius: 2px; transition: 0.3s; }
+        .step-indicator.active { background-color: #1b64da; }
+
+        .wizard-step { display: none; }
+        .wizard-step.active { display: block; }
+        .step-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .step-guide { font-size: 14px; color: #8b95a1; margin-bottom: 28px; }
+
+        .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .option-card { border: 1.5px solid #e5e8eb; border-radius: 18px; padding: 24px 20px; cursor: pointer; background: #ffffff; transition: 0.2s; }
+        .option-card:hover { border-color: #93bbf8; background: #fafcff; }
+        .option-card.selected { border-color: #1b64da; box-shadow: 0 0 0 1.5px #1b64da; background: #f4f8ff; }
+        .icon-circle { font-size: 16px; color: #333d4b; margin-bottom: 12px; height: 32px; }
+        .option-card.selected .icon-circle { color: #1b64da; }
+        .card-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+        .option-card.selected .card-title { color: #1b64da; }
+        .card-sub { font-size: 12.5px; color: #8b95a1; line-height: 1.45; }
+
+        .form-label { font-size: 13.5px; font-weight: 600; color: #4e5968; margin-bottom: 12px; display: block; }
+        .tag-cloud { display: flex; flex-wrap: wrap; gap: 10px; }
+        .tag-item { background: #ffffff; border: 1px solid #e5e8eb; border-radius: 10px; padding: 10px 16px; font-size: 14px; color: #333d4b; cursor: pointer; transition: 0.15s; }
+        .tag-item:hover { background: #f2f4f6; }
+        .tag-item.selected { border-color: #1b64da; color: #1b64da; background: #f4f8ff; font-weight: 600; }
+        .sub-header-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
+        .selected-group-badge { font-size: 18px; font-weight: 700; color: #191f28; margin-top: 4px; }
+        .btn-link { background: none; border: none; color: #8b95a1; font-size: 13px; text-decoration: underline; cursor: pointer; }
+
+        .form-group { margin-bottom: 22px; }
+        .form-select, .form-textarea { width: 100%; padding: 13px 16px; border: 1px solid #d1d6db; border-radius: 12px; font-size: 14px; outline: none; background: #fff; }
+        .form-select:focus, .form-textarea:focus { border-color: #1b64da; }
+        .edu-box { border: 1px solid #e5e8eb; border-radius: 14px; padding: 14px 18px; background: #fff; }
+        .input-flat { width: 100%; border: none; outline: none; font-size: 15px; font-weight: 600; padding-bottom: 10px; }
+        .border-b { border-bottom: 1px solid #f2f4f6; }
+        .edu-sub-grid { display: flex; align-items: center; gap: 8px; padding-top: 10px; }
+        .edu-sub-grid input { border: none; outline: none; font-size: 12.5px; color: #4e5968; width: 100%; }
+        .divider { color: #d1d6db; font-size: 12px; }
+
+        .button-bar { display: flex; justify-content: space-between; margin-top: 36px; }
+        .btn-prev { background: #f2f4f6; border: none; color: #4e5968; padding: 12px 22px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn-next, .btn-primary { background: #1b64da; border: none; color: white; padding: 12px 26px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+        .btn-next:disabled { background: #d1d6db; cursor: not-allowed; }
+
+        .result-area { margin-top: 28px; padding: 20px; background: #f9fafb; border: 1px solid #e5e8eb; border-radius: 14px; }
+        .result-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .result-title { font-weight: 700; font-size: 15px; }
+        .btn-copy { background: #fff; border: 1px solid #d1d6db; padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .result-content { font-size: 14px; line-height: 1.7; white-space: pre-wrap; color: #333d4b; }
+    </style>
+</head>
+<body>
+
+    <!-- =========================================
+         [1] 랜딩 페이지 섹션
+    ========================================= -->
+    <section id="landing-section">
+        <!-- 상단 배경 및 떠다니는 기업 태그 영역 -->
+        <div class="landing-bg-section">
+            <div class="company-tags-container">
+                <!-- 첫 번째 줄 -->
+                <div class="tag-row">
+                    <div class="tag-pill"><span class="logo-circle bg-mirae"></span>미래에셋 <span class="arrow">&gt;</span></div>
+                    <div class="tag-pill"><span class="logo-circle bg-ibk"></span>IBK기업은행 <span class="arrow">&gt;</span></div>
+                    <div class="tag-pill"><span class="logo-circle bg-gas"></span>한국가스공사 <span class="arrow">&gt;</span></div>
+                </div>
+                <!-- 두 번째 줄 -->
+                <div class="tag-row">
+                    <div class="tag-pill"><span class="logo-circle bg-hanhwa"></span>한화 <span class="arrow">&gt;</span></div>
+                    <div class="tag-pill"><span class="logo-circle bg-samsung"></span>삼성전자 <span class="arrow">&gt;</span></div>
+                    <div class="tag-pill"><span class="logo-circle bg-hyundai"></span>현대자동차 <span class="arrow">&gt;</span></div>
+                    <div class="tag-pill"><span class="logo-circle bg-sk"></span>SK 하이닉스 <span class="arrow">&gt;</span></div>
+                </div>
+                <!-- 세 번째 줄 -->
+                <div class="tag-row">
+                    <div class="tag-pill"><span class="logo-circle bg-kakao"></span>카카오 <span class="arrow">&gt;</span></div>
+                    <div class="tag-pill"><span class="logo-circle bg-lg"></span>LG전자 <span class="arrow">&gt;</span></div>
+                    <div class="tag-pill"><span class="logo-circle bg-naver"></span>네이버 <span class="arrow">&gt;</span></div>
+                    <div class="tag-pill"><span class="logo-circle bg-kakao"></span>카카오뱅크 <span class="arrow">&gt;</span></div>
+                </div>
+                <!-- 네 번째 줄 (흐려지는 영역) -->
+                <div class="tag-row row-faded">
+                    <div class="tag-pill"><span class="logo-circle bg-posco"></span>포스코 <span class="arrow">&gt;</span></div>
+                    <div class="tag-pill"><span class="logo-circle bg-kia"></span>기아 <span class="arrow">&gt;</span></div>
+                    <div class="tag-pill"><span class="logo-circle bg-kepco"></span>한국전력공사 <span class="arrow">&gt;</span></div>
+                    <div class="tag-pill"><span class="logo-circle bg-shinhan"></span>신한은행 <span class="arrow">&gt;</span></div>
+                </div>
+            </div>
+            <!-- 하단으로 갈수록 하얗게 페이드 아웃되는 오버레이 -->
+            <div class="fade-overlay"></div>
+        </div>
+
+        <!-- 중앙 메인 콘텐츠 영역 -->
+        <div class="landing-content">
+            <div class="icon-box">
+                <!-- 펜 모양 아이콘 SVG -->
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+                    <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                    <path d="M2 2l7.586 7.586"></path>
+                    <circle cx="11" cy="11" r="2"></circle>
+                </svg>
+            </div>
+            <h1 class="landing-title">합격 가능성을 높이는<br>자소서 쓰기</h1>
+            <p class="landing-desc">기업별 합격 사례와 최신 정보를 바탕으로<br>자기소개서를 작성하고 첨삭해드려요.</p>
+
+            <!-- 시작하기 버튼 (클릭 시 빌더 섹션 노출) -->
+            <div class="action-area">
+                <button type="button" class="btn-start" onclick="startBuilder()">시작하기</button>
+            </div>
+
+            <p class="terms-text">
+                서비스를 이용함으로써, 귀하는 본 <a>이용약관</a>과 <a>개인정보처리방침</a>에 동의하게 됩니다
+            </p>
+        </div>
+    </section>
+
+    <!-- =========================================
+         [2] 빌더(마법사) 섹션
+    ========================================= -->
+    <section id="builder-section">
+        <div class="wizard-container">
+            <!-- 상단 4단계 인디케이터 -->
+            <div class="stepper-nav">
+                <div class="step-indicator active" id="ind-1"></div>
+                <div class="step-indicator" id="ind-2"></div>
+                <div class="step-indicator" id="ind-3"></div>
+                <div class="step-indicator" id="ind-4"></div>
+            </div>
+
+            <!-- [STEP 1] 어떤 활동을 준비할까요? -->
+            <div class="wizard-step active" id="step-1">
+                <h2 class="step-title">어떤 <span class="text-blue">활동</span>을 준비할까요? 🎯</h2>
+                <div class="card-grid">
+                    <div class="option-card" data-val="대외활동" onclick="chooseActivity(this)">
+                        <div class="icon-circle">●</div>
+                        <div class="card-title">대외활동</div>
+                        <div class="card-sub">서포터즈 / 동아리 / 학회<br>지원을 준비하고 있어요.</div>
+                    </div>
+                    <div class="option-card" data-val="인턴/계약직" onclick="chooseActivity(this)">
+                        <div class="icon-circle">● ●</div>
+                        <div class="card-title">인턴/계약직</div>
+                        <div class="card-sub">인턴 / 계약직<br>지원을 준비하고 있어요.</div>
+                    </div>
+                    <div class="option-card" data-val="취업 준비" onclick="chooseActivity(this)">
+                        <div class="icon-circle">●<br>● ●</div>
+                        <div class="card-title">취업 준비</div>
+                        <div class="card-sub">공채 / 수시채용 등<br>지원을 준비하고 있어요.</div>
+                    </div>
+                    <div class="option-card" data-val="이직" onclick="chooseActivity(this)">
+                        <div class="icon-circle">❖</div>
+                        <div class="card-title">이직</div>
+                        <div class="card-sub">이직을<br>준비하고 있어요.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- [STEP 2] 어떤 직군/직무를 함께 준비할까요? -->
+            <div class="wizard-step" id="step-2">
+                <h2 class="step-title">어떤 <span class="text-blue">직군/직무</span>를 함께 준비할까요? 👀</h2>
+                <p class="step-guide">원하는 직무에 맞게 맞춤형 서비스를 제공해드릴게요.</p>
+
+                <div id="jobGroupArea">
+                    <div class="form-label">관심직군 *</div>
+                    <div class="tag-cloud" id="jobGroupTags"></div>
+                </div>
+
+                <div id="subJobArea" class="sub-job-section hidden">
+                    <div class="sub-header-row">
+                        <div>
+                            <span class="form-label" style="margin-bottom:0;">관심직군 *</span>
+                            <div class="selected-group-badge" id="selectedGroupName">마케팅, 광고</div>
+                        </div>
+                        <button type="button" class="btn-link" onclick="resetJobGroup()">다시 고르기</button>
+                    </div>
+
+                    <div class="form-label mt-4">관심직무 (복수 선택 가능) *</div>
+                    <div class="tag-cloud" id="subJobTags"></div>
+                </div>
+
+                <div class="button-bar">
+                    <button type="button" class="btn-prev" onclick="goToStep(1)">이전</button>
+                    <button type="button" class="btn-next" id="btnStep2Next" disabled onclick="goToStep(3)">다음</button>
+                </div>
+            </div>
+
+            <!-- [STEP 3] 학력 사항을 알려주세요 -->
+            <div class="wizard-step" id="step-3">
+                <h2 class="step-title"><span class="text-blue">학력 사항</span>을 알려주세요 🎓</h2>
+                <p class="step-guide">이력서를 작성에 필요한 기본 정보예요.</p>
+
+                <div class="form-group">
+                    <label class="form-label">최종 학력</label>
+                    <select id="eduDegree" class="form-select">
+                        <option value="대학원">대학원</option>
+                        <option value="대학교(4년제)" selected>대학교(4년제)</option>
+                        <option value="대학(2,3년제)">대학(2,3년제)</option>
+                        <option value="고등학교 졸업">고등학교 졸업</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">학력 정보</label>
+                    <div class="edu-box">
+                        <input type="text" id="eduSchool" placeholder="학교명 *" class="input-flat border-b">
+                        <div class="edu-sub-grid">
+                            <input type="text" id="eduStatus" placeholder="졸업 상태 *">
+                            <span class="divider">|</span>
+                            <input type="text" id="eduPeriod" placeholder="YYYY.MM* ~ YYYY.MM*">
+                            <span class="divider">|</span>
+                            <input type="text" id="eduMajor" placeholder="전공 및 학위 *">
+                            <span class="divider">|</span>
+                            <input type="text" id="eduGpa" placeholder="학점">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-bar">
+                    <button type="button" class="btn-prev" onclick="goToStep(2)">이전</button>
+                    <button type="button" class="btn-next" onclick="goToStep(4)">다음</button>
+                </div>
+            </div>
+
+            <!-- [STEP 4] 문항 및 경험 작성 후 최종 생성 -->
+            <div class="wizard-step" id="step-4">
+                <h2 class="step-title">자소서 <span class="text-blue">문항과 경험</span>을 적어주세요 ✍️</h2>
+                <p class="step-guide">경험은 문장이 아니어도 괜찮습니다. 키워드 중심으로 적어주세요.</p>
+
+                <div class="form-group">
+                    <label class="form-label">자기소개서 문항</label>
+                    <select id="docQuestion" class="form-select">
+                        <option value="지원동기 및 입사 후 포부를 기술해 주십시오.">지원동기 및 입사 후 포부</option>
+                        <option value="직무 수행을 위해 노력한 경험과 대표적인 성과를 서술해 주십시오.">직무 관련 대표 성과 및 문제해결</option>
+                        <option value="협업 과정에서 겪은 갈등과 이를 극복한 경험을 기술해 주십시오.">팀워크 및 협업 갈등 극복</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">내 핵심 경험 / 성과 메모 *</label>
+                    <textarea id="docExperience" class="form-textarea" rows="5" placeholder="예시: 2025년 마케팅 인턴 진행. 퍼포먼스 광고 집행 및 A/B 테스트로 전환율(CVR) 2.1%에서 4.5%로 개선. 예산 15% 절감 달성."></textarea>
+                </div>
+
+                <div class="button-bar">
+                    <button type="button" class="btn-prev" onclick="goToStep(3)">이전</button>
+                    <!-- 프론트엔드 목업용 결과 확인 함수(submitGenerateMock) 호출 -->
+                    <button type="button" class="btn-primary" id="btnGenerate" onclick="submitGenerateMock()">⚡ AI 맞춤 자소서 완성하기</button>
+                </div>
+
+                <!-- 결과 출력창 -->
+                <div id="aiResultArea" class="result-area hidden">
+                    <div class="result-top">
+                        <span class="result-title">🎉 AI가 완성한 자기소개서</span>
+                        <button type="button" class="btn-copy" onclick="copyContent()">복사하기</button>
+                    </div>
+                    <div id="resultContent" class="result-content"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =========================================
+         [3] 자바스크립트 영역
+    ========================================= -->
+    <script>
+        const wizardPayload = {
+            activity_type: '',
+            job_group: '',
+            job_roles: [],
+            education: {
+                degree: '',
+                school: '',
+                status: '',
+                period: '',
+                major: '',
+                gpa: ''
+            },
+            question: '',
+            experience: ''
+        };
+
+        const jobTree = {
+            "개발": ["웹 풀스택", "프론트엔드", "백엔드", "iOS 개발자", "Android 개발자", "데이터 엔지니어", "DevOps"],
+            "마케팅, 광고": ["마케터", "디지털 마케터", "브랜드 마케터", "콘텐츠 마케터", "퍼포먼스 마케터", "광고 기획자(AE)", "마케팅 전략 기획자", "글로벌 마케팅", "소셜 마케터", "카피라이터", "CRM 마케터"],
+            "경영, 비즈니스": ["사업개발", "서비스 기획자", "PM/PO", "전략기획", "경영지원", "총무"],
+            "디자인": ["UI/UX 디자이너", "프로덕트 디자이너", "브랜드 디자이너", "그래픽 디자이너"],
+            "영업": ["국내영업", "해외영업", "기술영업", "B2B 솔루션 영업"],
+            "엔지니어링, 설계": ["기계설계", "공정기술", "품질관리", "생산관리"],
+            "물류, 무역": ["해외영업지원", "수출입 물류", "SCM", "관세/통관"]
+        };
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initJobGroups();
+        });
+
+        // 1. 랜딩 페이지 -> 빌더 진입
+        function startBuilder() {
+            document.getElementById('landing-section').style.display = 'none';
+            document.getElementById('builder-section').style.display = 'block';
+            window.scrollTo(0, 0);
+        }
+
+        // 2. 활동 유형 선택 (Step 1)
+        function chooseActivity(element) {
+            document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+            element.classList.add('selected');
+            wizardPayload.activity_type = element.dataset.val;
+            setTimeout(() => goToStep(2), 200);
+        }
+
+        // 3. 직군/직무 선택 (Step 2)
+        function initJobGroups() {
+            const container = document.getElementById('jobGroupTags');
+            container.innerHTML = '';
+            Object.keys(jobTree).forEach(group => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'tag-item';
+                btn.innerText = group;
+                btn.onclick = () => selectJobGroup(group);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectJobGroup(groupName) {
+            wizardPayload.job_group = groupName;
+            wizardPayload.job_roles = [];
+
+            document.getElementById('jobGroupArea').classList.add('hidden');
+            document.getElementById('subJobArea').classList.remove('hidden');
+            document.getElementById('selectedGroupName').innerText = groupName;
+
+            const subContainer = document.getElementById('subJobTags');
+            subContainer.innerHTML = '';
+            const roles = jobTree[groupName] || ["기획", "운영"];
+            roles.forEach(role => {
+                const tag = document.createElement('button');
+                tag.type = 'button';
+                tag.className = 'tag-item';
+                tag.innerText = role;
+                tag.onclick = () => toggleJobRole(tag, role);
+                subContainer.appendChild(tag);
+            });
+
+            checkStep2Validity();
+        }
+
+        function resetJobGroup() {
+            wizardPayload.job_group = '';
+            wizardPayload.job_roles = [];
+            document.getElementById('jobGroupArea').classList.remove('hidden');
+            document.getElementById('subJobArea').classList.add('hidden');
+            checkStep2Validity();
+        }
+
+        function toggleJobRole(tagEl, roleName) {
+            tagEl.classList.toggle('selected');
+            if (wizardPayload.job_roles.includes(roleName)) {
+                wizardPayload.job_roles = wizardPayload.job_roles.filter(r => r !== roleName);
+            } else {
+                wizardPayload.job_roles.push(roleName);
+            }
+            checkStep2Validity();
+        }
+
+        function checkStep2Validity() {
+            const nextBtn = document.getElementById('btnStep2Next');
+            nextBtn.disabled = wizardPayload.job_roles.length === 0;
+        }
+
+        // 4. 스텝 이동 공통 함수
+        function goToStep(stepNum) {
+            document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+            document.getElementById(`step-${stepNum}`).classList.add('active');
+
+            for (let i = 1; i <= 4; i++) {
+                const ind = document.getElementById(`ind-${i}`);
+                if (i <= stepNum) {
+                    ind.classList.add('active');
+                } else {
+                    ind.classList.remove('active');
+                }
+            }
+        }
+
+        // 5. 프론트엔드 전용 목업(Mock) 결과 생성 (Flask 백엔드 없이 테스트용)
+        function submitGenerateMock() {
+            wizardPayload.education = {
+                degree: document.getElementById('eduDegree').value,
+                school: document.getElementById('eduSchool').value || 'OO대학교',
+                major: document.getElementById('eduMajor').value || '관련 전공'
+            };
+            wizardPayload.question = document.getElementById('docQuestion').value;
+            wizardPayload.experience = document.getElementById('docExperience').value;
+
+            if (!wizardPayload.experience.trim()) {
+                alert("경험 메모를 최소 1줄 이상 적어주세요!");
+                return;
+            }
+
+            const genBtn = document.getElementById('btnGenerate');
+            genBtn.innerText = "⏳ AI 자소서 작성 중...";
+            genBtn.disabled = true;
+
+            const rolesStr = wizardPayload.job_roles.length > 0 ? wizardPayload.job_roles.join(", ") : wizardPayload.job_group;
+
+            // 가상 응답 텍스트 (setTimeout으로 로딩 지연 시뮬레이션)
+            const mockResult = `[${rolesStr} 직무의 성장을 이끄는 실행력과 역량]\n\n${wizardPayload.activity_type}에 임하며 저는 '${rolesStr}' 분야에서 실질적인 성과를 만들어내는 인재가 되고자 준비해 왔습니다. ${wizardPayload.education.school}에서 ${wizardPayload.education.major}을 이수하며 다진 기본기를 바탕으로 실제 현장 실무에 빠르게 적응할 수 있는 기반을 닦았습니다.\n\n특히 "${wizardPayload.experience.trim()}" 과정에서 문제의 본질을 파악하고 주도적으로 대안을 실행하여 구체적인 개선을 이끌어냈습니다. 단순히 주어진 업무를 수행하는 데 그치지 않고 목표 지표를 설정하고 이를 달성하기 위한 구체적인 액션 플랜을 수립했던 경험은 저만의 차별화된 경쟁력입니다.\n\n입사 후에도 이러한 실행력과 분석적 시각을 발휘하여 팀의 핵심 목표 달성에 기여하는 신뢰받는 인재가 되겠습니다.`;
+
+            setTimeout(() => {
+                document.getElementById('aiResultArea').classList.remove('hidden');
+                document.getElementById('resultContent').innerText = mockResult;
+                document.getElementById('aiResultArea').scrollIntoView({ behavior: 'smooth' });
+                genBtn.innerText = "⚡ AI 맞춤 자소서 완성하기";
+                genBtn.disabled = false;
+            }, 1200);
+        }
+
+        // 6. 결과 복사
+        function copyContent() {
+            const text = document.getElementById('resultContent').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert("자기소개서가 클립보드에 복사되었습니다!");
+            });
+        }
+    </script>
+</body>
+</html>
